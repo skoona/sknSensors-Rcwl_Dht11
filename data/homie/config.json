@@ -1,0 +1,23 @@
+{
+  "name": "Home Office",
+  "device_id": "HomeOffice",
+  "device_stats_interval": 180,  
+  "wifi": {
+    "ssid": "SFNSS1-24G",
+    "password": "Apache Tomcat 8"
+  },
+  "mqtt": {
+    "host": "openhabianpi.skoona.net",
+    "port": 1883,
+	"base_topic": "homie/",
+    "auth": true,
+    "username": "openhabian",
+    "password": "Apache.Tomcat.8"
+  },
+  "ota": {
+    "enabled": true
+  },
+  "settings": {
+      "sensorsInterval": 300
+  }
+}
