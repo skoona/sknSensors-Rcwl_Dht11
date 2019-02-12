@@ -1,18 +1,18 @@
 {
-  "name": "Home Office",
-  "device_id": "HomeOffice",
+  "name": "Guest Room",
+  "device_id": "GuestRoom",
   "device_stats_interval": 180,  
   "wifi": {
-    "ssid": "SFNSS1-24G",
-    "password": "Apache Tomcat 8"
+    "ssid": "<WIFI-SSID>",
+    "password": "<WIFI PASSWORD>"
   },
   "mqtt": {
-    "host": "openhabianpi.skoona.net",
+    "host": "<MQTT-SERVER-IP>",
     "port": 1883,
 	"base_topic": "homie/",
     "auth": true,
-    "username": "openhabian",
-    "password": "Apache.Tomcat.8"
+    "username": "<MQTT-USERNAME>",
+    "password": "<MQTT-USERPASS>"
   },
   "ota": {
     "enabled": true
