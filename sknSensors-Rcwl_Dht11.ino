@@ -28,11 +28,11 @@ extern "C" {
 #define NODE_SENSOR_INTERVAL  60
 
 #define FW_NAME "sknSensors-Rcwl_Dht11"
-#define FW_VERSION  "0.2.3"
+#define FW_VERSION  "0.2.4"
 
 #define DHTTYPE DHT11
-#define DHT_PIN   D6 
-#define RCWL_PIN  D5
+#define DHT_PIN   D6    // GPIO12
+#define RCWL_PIN  D5    // GPIO14
 
 String            gsMotionString      = "false";
 volatile float    gfTemperature       = 0.0f, 
@@ -64,38 +64,41 @@ void setupHandler() {
 }
 
 void loopHandler() {
-  gbLastMotion = gbMotion;
-  gbMotion = digitalRead(RCWL_PIN);
-  
-  if (millis() - gulLastSensorsSend >= (sensorsIntervalSetting.get() * 1000UL) || gulLastSensorsSend == 0) {
-     dht.temperature().getEvent(&event);
-     if( !isnan(event.temperature) ){
-       gfTemperature = ((event.temperature * 1.8) + 32.0);
-       Homie.getLogger() << "Temperature: " << gfTemperature << " °F" << endl;
-       temperatureNode.setProperty("degrees").send(String(gfTemperature));
-   
-       dht.humidity().getEvent(&event);
-       if( !isnan(event.relative_humidity) ){
-           gfHumidity = event.relative_humidity;
-           Homie.getLogger() << "Humidity: " << gfHumidity << " %" << endl;
-           humidityNode.setProperty("percent").send(String(gfHumidity));
-       }     
+  gbMotion = digitalRead(RCWL_PIN); // true for 2 seconds per presence trigger
 
-       if (gbMotion == LOW) {
-         gsMotionString = "false";
-         Homie.getLogger() << "Humans.Present?: NO" << endl;
-         rcwlNode.setProperty("motion").setRetained(true).send(gsMotionString);  
-       } 
-
-       gulLastSensorsSend = millis();
-     }
-
-  } else if (gbLastMotion == LOW && gbMotion == HIGH) { // Turn on at leading edge
-     gsMotionString = "true";
-     Homie.getLogger() << "Humans.Present?: YES" << endl;
-     rcwlNode.setProperty("motion").setRetained(true).send(gsMotionString);         
+  if (gbLastMotion == LOW && gbMotion == HIGH) { 
+    gsMotionString = "true";
+    gbLastMotion = gbMotion;   //toggle to hold
+    rcwlNode.setProperty("motion").send(gsMotionString);         
+    Homie.getLogger() << "Humans.Present?: " << gsMotionString << endl;
   }
+    
+  if (millis() - gulLastSensorsSend >= (sensorsIntervalSetting.get() * 1000UL) || gulLastSensorsSend == 0) {
+    dht.temperature().getEvent(&event);
+    if( !isnan(event.temperature) ){
+     gfTemperature = ((event.temperature * 1.8) + 32.0);
+     Homie.getLogger() << "Temperature: " << gfTemperature << " °F" << endl;
+     temperatureNode.setProperty("degrees").send(String(gfTemperature));
+    
+     dht.humidity().getEvent(&event);
+     if( !isnan(event.relative_humidity) ){
+       gfHumidity = event.relative_humidity;
+       Homie.getLogger() << "Humidity: " << gfHumidity << " %" << endl;
+       humidityNode.setProperty("percent").send(String(gfHumidity));
+     }     
+    }
+    
+    if (gbLastMotion == HIGH && gbMotion == LOW) {
+      gbLastMotion = gbMotion;                             // release hold
+      gsMotionString = "false";
+      rcwlNode.setProperty("motion").send(gsMotionString);  
+    }
+    Homie.getLogger() << "Humans?: " << gsMotionString << endl;
+    
+    gulLastSensorsSend = millis();  // required to be inside decision block
+  } // if time to send
 }
+
 
 void setup() {
   delay(50);
@@ -118,8 +121,7 @@ void setup() {
   
   rcwlNode.advertise("motion").setName("Motion")
                               .setDatatype("boolean")
-                              .setUnit("true:false")
-                              .setRetained(true);
+                              .setUnit("true,false");
 
   temperatureNode.advertise("degrees").setName("Degrees")
                                      .setDatatype("float")
